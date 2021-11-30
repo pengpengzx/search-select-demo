@@ -22,7 +22,12 @@
             :key="item.key"
             @click="confirm(item)"
           >
-            {{ item.title }}
+            <p
+              @mouseenter.stop="mouseenterHandler"
+              @mouseleave="mouseleaveHandler"
+            >
+              {{ item.title }}
+            </p>
           </li>
         </ul>
         <p v-if="groupList.length === 0" class="select-tip">暂无数据....</p>
@@ -44,7 +49,7 @@ const mockData = [
     key: "car",
     itemList: [
       {
-        title: "奔驰",
+        title: "奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔",
         key: "m",
         isDisabled: false,
       },
@@ -163,6 +168,17 @@ export default {
       this.searchValue = "";
       this.initData();
     },
+    mouseenterHandler(e) {
+      const animateCondition = 200 - 45;
+      const width = e.target.clientWidth;
+
+      if (width > animateCondition) {
+        e.target.className = "transx";
+      }
+    },
+    mouseleaveHandler(e) {
+      e.target.className = "";
+    },
   },
 };
 </script>
@@ -189,11 +205,25 @@ input {
   color: white;
 }
 .item {
+  width: 100%;
   text-align: left;
   position: relative;
   display: block;
   color: white;
   padding: 0 45px;
+  white-space: nowrap;
+  overflow-x: scroll;
+}
+.item p {
+  display: inline-block;
+  position: relative;
+  left: 0;
+}
+.transx {
+  animation: transx 5s infinite;
+}
+.long-text-animate {
+  transform: translateX(-100px);
 }
 .item.isChecked::before {
   position: absolute;
@@ -223,5 +253,16 @@ input {
   bottom: 0;
   right: 0;
   z-index: 2;
+}
+::-webkit-scrollbar {
+  display: none; /* Chrome Safari */
+}
+@keyframes transx {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 </style>
