@@ -1,5 +1,5 @@
 <template>
-  <div style="position: relative">
+  <div style="position: relative" ref="select-input">
     <div style="position: relative; z-index: 5" @keyup.stop="keyupHandler">
       <input
         type="text"
@@ -151,7 +151,7 @@ export default {
     // 键盘【上】事件
     arrowUp(e) {
       // 只有arrow down或者up的时候获取dom
-      let itemListDom = document.getElementsByTagName("li");
+      let itemListDom = this.$refs['select-input'].getElementsByTagName("li");
 
       // 处理边界条件
       if (this.keyUpIndex === -1) {
@@ -172,7 +172,7 @@ export default {
     },
     // 键盘【下】事件
     arrowDown(e) {
-      let itemListDom = document.getElementsByTagName("li");
+      let itemListDom = this.$refs['select-input'].getElementsByTagName("li");
 
       this.keyUpIndex += 1;
       // 处理边界条件
