@@ -1,6 +1,6 @@
 <template>
   <div style="position: relative">
-    <div style="position: relative; z-index: 5">
+    <div style="position: relative; z-index: 5" @keyup.stop="keyupHandler">
       <input
         type="text"
         v-model="searchValue"
@@ -17,10 +17,13 @@
             :class="{
               disabled: item.isDisabled,
               isChecked: result && item.key === result.key,
+              isFocus: item.index,
             }"
             v-for="item in group.itemList"
+            :tabindex="0"
             :key="item.key"
             @click="confirm(item)"
+            @keydown.enter="confirm(item)"
           >
             <p
               @mouseenter.stop="mouseenterHandler"
@@ -76,7 +79,7 @@ const mockData = [
       },
       {
         title: "闪电",
-        key: "s",
+        key: "ss",
         isDisabled: false,
       },
       {
@@ -105,10 +108,22 @@ export default {
       isShowSelect: false, // 是否展示模拟弹框
       result: null, // 搜索结果
       searchValue: "", // 搜索关键词
+      itemList: [],
+      keyUpIndex: -1,
     };
   },
   created() {
     this.initData();
+  },
+  mounted() {},
+  watch: {
+    groupList(val) {
+      let tempArr = [];
+      val.forEach((el) => {
+        tempArr = tempArr.concat(el.itemList);
+      });
+      this.itemList = this.cloneDeep(tempArr);
+    },
   },
   methods: {
     initData() {
@@ -166,6 +181,7 @@ export default {
     closeSelect() {
       this.isShowSelect = false;
       this.searchValue = "";
+      this.keyUpIndex = -1;
       this.initData();
     },
     mouseenterHandler(e) {
@@ -178,6 +194,57 @@ export default {
     },
     mouseleaveHandler(e) {
       e.target.className = "";
+    },
+    keyupHandler(e) {
+      if (e.code === "ArrowDown") {
+        this.arrowDown(e);
+      }
+      if (e.code === "ArrowUp") {
+        this.arrowUp(e);
+      }
+    },
+    // 键盘【上】事件
+    arrowUp(e) {
+      // 只有arrow down或者up的时候获取dom
+      let itemListDom = document.getElementsByTagName("li");
+
+      // 处理边界条件
+      if (this.keyUpIndex === -1) {
+        this.keyUpIndex = itemListDom.length;
+      }
+      this.keyUpIndex -= 1;
+
+      // 处理边界条件
+      if (this.keyUpIndex === -1) {
+        this.keyUpIndex = itemListDom.length - 1;
+      }
+      const target = itemListDom[this.keyUpIndex];
+
+      if (this.isJumpThisItem(target)) {
+        return this.arrowUp(e);
+      }
+      target.focus();
+    },
+    // 键盘【下】事件
+    arrowDown(e) {
+      let itemListDom = document.getElementsByTagName("li");
+
+      this.keyUpIndex += 1;
+      // 处理边界条件
+      if (this.keyUpIndex === itemListDom.length) {
+        this.keyUpIndex = 0;
+      }
+      const target = itemListDom[this.keyUpIndex];
+
+      if (this.isJumpThisItem(target)) {
+        return this.arrowDown(e);
+      } 
+      target.focus();
+    },
+    // 是否应该跳过该item
+    isJumpThisItem(target) {
+      const hasItem = this.itemList.filter((el) => !el.isDisabled).length > 0;
+      return hasItem && target.className.indexOf("disabled") > -1;
     },
   },
 };
@@ -253,6 +320,9 @@ input {
   bottom: 0;
   right: 0;
   z-index: 2;
+}
+.isFocus {
+  background: #656565;
 }
 ::-webkit-scrollbar {
   display: none; /* Chrome Safari */
