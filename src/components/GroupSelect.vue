@@ -4,103 +4,32 @@
       <input
         type="text"
         v-model="searchValue"
-        placeholder="请搜索.."
+        :placeholder="placeholder"
         @input="search"
         @focus="focusHandler"
       />
       <div class="select-wraper" v-if="isShowSelect">
-        <!-- 模拟select -->
-        <ul class="group" v-for="group in groupList" :key="group.key">
-          <p class="group-title">{{ group.title }}</p>
-          <li
-            class="item"
-            :class="{
-              disabled: item.isDisabled,
-              isChecked: result && item.key === result.key,
-              isFocus: item.index,
-            }"
-            v-for="item in group.itemList"
-            :tabindex="0"
-            :key="item.key"
-            @click="confirm(item)"
-            @keydown.enter="confirm(item)"
-          >
-            <p
-              @mouseenter.stop="mouseenterHandler"
-              @mouseleave="mouseleaveHandler"
-            >
-              {{ item.title }}
-            </p>
-          </li>
-        </ul>
-        <p v-if="groupList.length === 0" class="select-tip">暂无数据....</p>
-      </div>
-      <div v-if="result" style="margin-top: 15px">
-        你选择了: {{ result.title }}
+        <group-option
+          :groupList="groupList"
+          @confirm="confirmHandler"
+          :value="result"
+        ></group-option>
+        <p v-if="groupList.length === 0" class="select-tip">
+          {{ emptyDataText }}
+        </p>
       </div>
     </div>
     <!-- 外层mask 用来点击组件意外的区域时关闭组件 -->
-    <div class="mask" @click="closeSelect"></div>
+    <div class="mask" @click="closeSelect" v-if="isShowMask"></div>
   </div>
 </template>
 
 <script>
-// 测试数据
-const mockData = [
-  {
-    title: "汽车",
-    key: "car",
-    itemList: [
-      {
-        title: "奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔驰奔",
-        key: "m",
-        isDisabled: false,
-      },
-      {
-        title: "宝马",
-        key: "b",
-        isDisabled: false,
-      },
-      {
-        title: "奥迪",
-        key: "a",
-        isDisabled: true,
-      },
-    ],
-  },
-  {
-    title: "自行车",
-    key: "bicyle",
-    itemList: [
-      {
-        title: "捷安特",
-        key: "g",
-        isDisabled: false,
-      },
-      {
-        title: "闪电",
-        key: "ss",
-        isDisabled: false,
-      },
-      {
-        title: "凤凰",
-        key: "p",
-        isDisabled: false,
-      },
-      {
-        title: "宝凤凰",
-        key: "pp",
-        isDisabled: false,
-      },
-      {
-        title: "宝凤奔驰",
-        key: "ppp",
-        isDisabled: true,
-      },
-    ],
-  },
-];
+import GroupOption from "./GroupOption.vue";
+import { cloneDeep } from "./utils";
+
 export default {
+  components: { GroupOption },
   name: "HelloWorld",
   data() {
     return {
@@ -108,9 +37,31 @@ export default {
       isShowSelect: false, // 是否展示模拟弹框
       result: null, // 搜索结果
       searchValue: "", // 搜索关键词
-      itemList: [],
-      keyUpIndex: -1,
+      itemList: [], // 所有子item的容器
+      keyUpIndex: -1, // 上下键盘选择元素的索引值
+      isShowMask: false,
     };
+  },
+  props: {
+    // 数据源
+    data: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
+    value: {
+      type: Object,
+      default: null,
+    },
+    placeholder: {
+      type: String,
+      default: "请输入要搜索的内容",
+    },
+    emptyDataText: {
+      type: String,
+      default: "暂无数据...",
+    },
   },
   created() {
     this.initData();
@@ -126,8 +77,10 @@ export default {
     },
   },
   methods: {
+    cloneDeep,
     initData() {
-      this.groupList = this.cloneDeep(mockData);
+      this.groupList = this.cloneDeep(this.data);
+      this.result = this.cloneDeep(this.value);
     },
     // 搜索
     async search(e) {
@@ -146,7 +99,7 @@ export default {
     fetchData(target) {
       return new Promise((resolve) => {
         const tempList = [];
-        this.cloneDeep(mockData).forEach((el) => {
+        this.cloneDeep(this.data).forEach((el) => {
           const resultItem = el.itemList.filter((item) => {
             return item.title.indexOf(target) > -1;
           });
@@ -160,40 +113,23 @@ export default {
     },
     focusHandler() {
       this.isShowSelect = true;
+      this.isShowMask = true;
     },
-    // 点击item的回调
-    confirm(item) {
-      if (item.isDisabled) return false;
 
-      this.result = item;
-      this.closeSelect();
-    },
-    // 暂时模拟lodash 深拷贝
-    cloneDeep(obj) {
-      try {
-        const jsonStr = JSON.stringify(obj);
-        return JSON.parse(jsonStr);
-      } catch (error) {
-        console.log(error);
-      }
-    },
     // 关闭select
     closeSelect() {
       this.isShowSelect = false;
       this.searchValue = "";
       this.keyUpIndex = -1;
+      this.isShowMask = false;
       this.initData();
     },
-    mouseenterHandler(e) {
-      const animateCondition = 200 - 45;
-      const width = e.target.clientWidth;
-
-      if (width > animateCondition) {
-        e.target.className = "transx";
-      }
-    },
-    mouseleaveHandler(e) {
-      e.target.className = "";
+    confirmHandler(val) {
+      this.result = val;
+      this.$emit("onChange", this.result);
+      this.$nextTick(() => {
+        this.closeSelect();
+      });
     },
     keyupHandler(e) {
       if (e.code === "ArrowDown") {
@@ -238,7 +174,7 @@ export default {
 
       if (this.isJumpThisItem(target)) {
         return this.arrowDown(e);
-      } 
+      }
       target.focus();
     },
     // 是否应该跳过该item
@@ -291,21 +227,6 @@ input {
 }
 .long-text-animate {
   transform: translateX(-100px);
-}
-.item.isChecked::before {
-  position: absolute;
-  content: "✔";
-  top: -1px;
-  left: 10px;
-}
-.item:hover {
-  background: #656565;
-}
-.item.disabled {
-  cursor: not-allowed;
-}
-.item.disabled:hover {
-  background: none;
 }
 
 .group-title {
