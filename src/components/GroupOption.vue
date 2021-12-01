@@ -6,7 +6,7 @@
         class="item"
         :class="{
           disabled: item.isDisabled,
-          isChecked: result && item.key === result.key,
+          isChecked: isChecked(item),
           isFocus: item.index,
         }"
         v-for="item in group.itemList"
@@ -52,7 +52,9 @@ export default {
     // 点击item的回调
     confirm(item) {
       if (item.isDisabled) return false;
-
+      if (this.isChecked(item)) {
+        return this.$emit("confirm", null);
+      }
       this.result = item;
       this.$emit("confirm", this.result);
     },
@@ -67,6 +69,10 @@ export default {
     mouseleaveHandler(e) {
       e.target.className = "";
     },
+    // 是否选中
+    isChecked(item) {
+      return this.result && item.key === this.result.key
+    }
   },
 };
 </script>
