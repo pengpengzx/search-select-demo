@@ -5,8 +5,10 @@
         type="text"
         v-model="searchValue"
         :placeholder="placeholder"
-        @input="search"
         @focus="focusHandler"
+        @compositionstart="compositionHandler"
+        @compositionend="compositionHandler"
+        @input="throttle(search.bind(this, $event), 200)()"
       />
       <div class="select-wraper" v-if="isShowSelect">
         <group-option
@@ -26,7 +28,7 @@
 
 <script>
 import GroupOption from "./GroupOption.vue";
-import { cloneDeep } from "./utils";
+import { cloneDeep, throttle } from "./utils";
 
 export default {
   components: { GroupOption },
@@ -40,6 +42,7 @@ export default {
       itemList: [], // 所有子item的容器
       keyUpIndex: -1, // 上下键盘选择元素的索引值
       isShowMask: false,
+      isWaitingInputFlag: false,
     };
   },
   props: {
@@ -66,7 +69,8 @@ export default {
   created() {
     this.initData();
   },
-  mounted() {},
+  mounted() {
+  },
   watch: {
     groupList(val) {
       let tempArr = [];
@@ -77,6 +81,7 @@ export default {
     },
   },
   methods: {
+    throttle,
     cloneDeep,
     initData() {
       this.groupList = this.cloneDeep(this.data);
@@ -85,10 +90,11 @@ export default {
     // 搜索
     async search(e) {
       try {
+        if (this.isWaitingInputFlag) {return false;}
+
         const target = e.target.value;
-        if (target === "") {
-          return this.initData();
-        }
+        if (target === "") {return this.initData();}
+
         const data = await this.fetchData(target);
         this.groupList = data || [];
       } catch (error) {
@@ -115,7 +121,6 @@ export default {
       this.isShowSelect = true;
       this.isShowMask = true;
     },
-
     // 关闭select
     closeSelect() {
       this.isShowSelect = false;
@@ -138,6 +143,10 @@ export default {
       if (e.code === "ArrowUp") {
         this.arrowUp(e);
       }
+    },
+    // https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event 优化拼音输入体验
+    compositionHandler(e) {
+      this.isWaitingInputFlag = e.type !== "compositionend";
     },
     // 键盘【上】事件
     arrowUp(e) {
