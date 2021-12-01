@@ -7,5 +7,9 @@
 
 ### input输入优化
 
-1. 使用了防抖函数
-2. 监听input [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event)事件
+- 使用了防抖函数
+- 监听input [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event)事件
+
+### select下拉支持键盘
+
+- 为每个`div`增加[tabIndex](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex)属性，Element.focus() 可以触发聚焦
